@@ -5,7 +5,6 @@ description = ""
 authors = ["Koen van Gilst <koen@koenvangilst.nl>"]
 license = "MIT"
 readme = "README.md"
-packages = [{include = "dutch_climate_data"}]
 
 [tool.poetry.dependencies]
 python = "^3.10"
