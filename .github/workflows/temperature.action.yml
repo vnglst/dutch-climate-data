@@ -1,0 +1,26 @@
+name: Update Temperatures
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "0 9,12,17 * * *" # Runs 3 times a day
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.x'
+      - name: Run Update Temperatures
+        run: python update_temperatures.py
+      - name: Commit and Push
+        run: |
+          git config --local user.email "robot@koenvangilst.nl"
+          git config --local user.name "Robot"
+          git add .
+          git commit -m "Update temperatures"
+          git push
+        
