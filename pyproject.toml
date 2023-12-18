@@ -9,6 +9,7 @@ packages = [{include = "dutch_climate_data"}]
 
 [tool.poetry.dependencies]
 python = "^3.10"
+requests = "^2.31.0"
 
 
 [build-system]

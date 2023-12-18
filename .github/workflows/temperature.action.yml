@@ -13,9 +13,9 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@v4
         with:
-          python-version: '3.x'
+          python-version: "3.x"
       - name: Run Update Temperatures
-        run: python update_temperatures.py
+        run: poetry run python update_temperatures.py
       - name: Commit and Push
         run: |
           git config --local user.email "robot@koenvangilst.nl"
@@ -23,4 +23,3 @@ jobs:
           git add .
           git commit -m "Update temperatures"
           git push
-        
