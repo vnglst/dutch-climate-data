@@ -1,0 +1,16 @@
+[tool.poetry]
+name = "dutch-climate-data"
+version = "0.1.0"
+description = ""
+authors = ["Koen van Gilst <koen@koenvangilst.nl>"]
+license = "MIT"
+readme = "README.md"
+packages = [{include = "dutch_climate_data"}]
+
+[tool.poetry.dependencies]
+python = "^3.10"
+
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
