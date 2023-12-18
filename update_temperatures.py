@@ -1,5 +1,6 @@
 import json
 import requests
+import datetime
 
 DATA_URL = 'https://cdn.knmi.nl/knmi/map/page/klimatologie/gegevens/maandgegevens/mndgeg_260_tg.txt'
 r = requests.get(DATA_URL, timeout=10)
