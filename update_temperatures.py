@@ -70,6 +70,7 @@ heatmap_data = heatmap_data[::-1]
 heatmap_years = heatmap_years[::-1]
 
 to_write = {
+    'timestamp': datetime.datetime.now().isoformat(),
     'data': heatmap_data,
     'years': heatmap_years
 }
@@ -93,6 +94,7 @@ for year, line in enumerate(parsed):
     anomalies_per_year.append(anomaly)
 
 to_write = {
+    'timestamp': datetime.datetime.now().isoformat(),
     'data': anomalies_per_year,
     'years': anomalies_years
 }

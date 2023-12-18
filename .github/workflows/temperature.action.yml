@@ -1,6 +1,9 @@
 name: Update Temperatures
 
 on:
+  push:
+    branches:
+      - main
   workflow_dispatch:
   schedule:
     - cron: "0 9,12,17 * * *" # Runs 3 times a day
