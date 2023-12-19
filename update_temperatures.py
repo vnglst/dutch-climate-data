@@ -2,103 +2,88 @@ import json
 import requests
 import datetime
 
-DATA_URL = 'https://cdn.knmi.nl/knmi/map/page/klimatologie/gegevens/maandgegevens/mndgeg_260_tg.txt'
-r = requests.get(DATA_URL, timeout=10)
-data = r.text
+URL = 'https://cdn.knmi.nl/knmi/map/page/klimatologie/gegevens/maandgegevens/mndgeg_260_tg.txt'
 
-# parse data by splitting it across new lines, discard the first 15 lines
-lines = data.split('\n')[15:]
 
-# remove empty lines
-lines = [line for line in lines if line != '']
+def fetch_data(url):
+    return requests.get(url, timeout=10).text
 
-parsed = []
 
-for year, line in enumerate(lines):
-    values = []
-    columns = line.split(',')
-    yearLabel = columns[1]
-    values.append(yearLabel)
-    str_values = columns[2:]
+def parse_data(raw_data):
+    lines = [l for l in raw_data.split('\n')[15:] if l.strip()]
+    return [parse_line(l) for l in lines]
 
-    for str_value in str_values:
-        str_value = str_value.strip()
-        str_value = str_value.replace('\r', '')
 
-        if str_value == '':
-            values.append(None)
+def parse_line(l):
+    cols = l.strip().replace('\r', '').split(',')
+    year = cols[1]
+    vals = [year]
+    for v in cols[2:]:
+        if v.strip():
+            vals.append(float(v) / 10)
         else:
-            values.append(float(str_value) / 10)
-
-    parsed.append(values)
-
-# start with a list of 13 empty lists, one for each month and one for the year
-pivoted = [[] for _ in range(13)]
-
-for year, row in enumerate(parsed):
-    monthly_values = []
-
-    for month, value in enumerate(row[1:]):
-        monthly_values.append(value)
-
-        if value is not None:
-            pivoted[month].append(value)
+            vals.append(None)
+    return vals
 
 
-averages_last_century = []
+def calculate_monthly_data(parsed_data):
+    monthly_data = [[] for _ in range(13)]
+    for row in parsed_data:
+        for month, value in enumerate(row[1:]):
+            if value is not None:
+                monthly_data[month].append(value)
+    return monthly_data
 
-for month, values in enumerate(pivoted):
-    # only take the first 100 years
-    values = values[:100]
-    average = sum(values) / len(values)
-    averages_last_century.append(average)
 
-heatmap_data = []
-heatmap_years = []
+def calculate_avg_temps(monthly_data):
+    return [sum(vals[:100]) / len(vals[:100]) for vals in monthly_data]
 
-for year, line in enumerate(parsed):
-    year_label = line[0]
-    heatmap_years.append(year_label)
-    months = line[1:-1]
 
-    for month, value in enumerate(months):
-        average = averages_last_century[month]
-        anomaly = None if value is None else value - average
-        heatmap_data.append([month, year_label, anomaly])
+def calculate_anomalies(parsed_data, avg_temps):
+    anomalies = []
+    for l in parsed_data:
+        year = l[0]
+        months = l[1:-1]
+        for month_index, value in enumerate(months):
+            avg = avg_temps[month_index]
+            anomaly = None if value is None else value - avg
+            anomalies.append([month_index, year, anomaly])
+    return anomalies[::-1]
 
-# reverse the list so that the most recent data is at the end
-heatmap_data = heatmap_data[::-1]
-heatmap_years = heatmap_years[::-1]
 
-to_write = {
-    'timestamp': datetime.datetime.now().isoformat(),
-    'data': heatmap_data,
-    'years': heatmap_years
-}
+def write_to_file(filename, data, years):
+    to_write = {
+        'timestamp': datetime.datetime.now().isoformat(),
+        'data': data,
+        'years': years
+    }
+    with open(filename, 'w', encoding='utf-8') as f:
+        json.dump(to_write, f, indent=2)
 
-with open('data/temperature-heatmap.json', 'w', encoding='utf-8') as f:
-    json.dump(to_write, f, indent=2)
 
-# next visual: bar chart of the temperature anomalies per year
-anomalies_per_year = []
-anomalies_years = []
+def calculate_yearly_anomalies(parsed_data, avg_temps):
+    yearly_anomalies = []
+    for l in parsed_data:
+        year_value = l[-1]
+        if year_value is not None:
+            anomaly = year_value - avg_temps[-1]
+        else:
+            anomaly = None
+        yearly_anomalies.append(anomaly)
+    return yearly_anomalies
 
-for year, line in enumerate(parsed):
-    year_label = line[0]
-    anomalies_years.append(year_label)
-    year_value = line[-1:][0]
 
-    anomaly = None
-    if year_value is not None:
-        anomaly = year_value - averages_last_century[-1]
+def main():
+    raw_data = fetch_data(URL)
+    parsed_data = parse_data(raw_data)
+    monthly_data = calculate_monthly_data(parsed_data)
+    avg_temps = calculate_avg_temps(monthly_data)
+    anomalies = calculate_anomalies(parsed_data, avg_temps)
+    years = [l[0] for l in parsed_data][::-1]
+    write_to_file('data/temperature-heatmap.json', anomalies, years)
+    yearly_anomalies = calculate_yearly_anomalies(parsed_data, avg_temps)
+    write_to_file('data/temperature-anomalies.json', yearly_anomalies, years)
 
-    anomalies_per_year.append(anomaly)
 
-to_write = {
-    'timestamp': datetime.datetime.now().isoformat(),
-    'data': anomalies_per_year,
-    'years': anomalies_years
-}
-
-with open('data/temperature-anomalies.json', 'w', encoding="utf-8") as f:
-    json.dump(to_write, f, indent=2)
+if __name__ == "__main__":
+    main()

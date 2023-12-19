@@ -3,7 +3,7 @@ name: Update Temperatures
 on:
   workflow_dispatch:
   schedule:
-    - cron: "0 9,12,17 * * *" # Runs 3 times a day
+    - cron: "0 12 * * 5" # Runs at 12:00 PM every Friday
 
 jobs:
   build:
