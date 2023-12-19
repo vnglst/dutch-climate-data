@@ -26,7 +26,7 @@ def parse_line(l):
     return vals
 
 
-def calculate_monthly_data(parsed_data):
+def pivot_table(parsed_data):
     monthly_data = [[] for _ in range(13)]
     for row in parsed_data:
         for month, value in enumerate(row[1:]):
@@ -41,14 +41,14 @@ def calculate_avg_temps(monthly_data):
 
 def calculate_anomalies(parsed_data, avg_temps):
     anomalies = []
-    for l in parsed_data:
-        year = l[0]
-        months = l[1:-1]
+    for row in parsed_data:
+        year = row[0]
+        months = row[1:-1]
         for month_index, value in enumerate(months):
             avg = avg_temps[month_index]
             anomaly = None if value is None else value - avg
             anomalies.append([month_index, year, anomaly])
-    return anomalies[::-1]
+    return anomalies
 
 
 def write_to_file(filename, data, years):
@@ -63,8 +63,8 @@ def write_to_file(filename, data, years):
 
 def calculate_yearly_anomalies(parsed_data, avg_temps):
     yearly_anomalies = []
-    for l in parsed_data:
-        year_value = l[-1]
+    for row in parsed_data:
+        year_value = row[-1]
         if year_value is not None:
             anomaly = year_value - avg_temps[-1]
         else:
@@ -76,13 +76,15 @@ def calculate_yearly_anomalies(parsed_data, avg_temps):
 def main():
     raw_data = fetch_data(URL)
     parsed_data = parse_data(raw_data)
-    monthly_data = calculate_monthly_data(parsed_data)
+    monthly_data = pivot_table(parsed_data)
     avg_temps = calculate_avg_temps(monthly_data)
     anomalies = calculate_anomalies(parsed_data, avg_temps)
-    years = [l[0] for l in parsed_data][::-1]
-    write_to_file('data/temperature-heatmap.json', anomalies, years)
+    years = [row[0] for row in parsed_data]
+    write_to_file('data/temperature-heatmap.json',
+                  anomalies[::-1], years[::-1])
     yearly_anomalies = calculate_yearly_anomalies(parsed_data, avg_temps)
-    write_to_file('data/temperature-anomalies.json', yearly_anomalies, years)
+    write_to_file('data/temperature-anomalies.json',
+                  yearly_anomalies, years)
 
 
 if __name__ == "__main__":

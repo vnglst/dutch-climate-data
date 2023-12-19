@@ -55,3 +55,11 @@ class TestUpdateTemperatures(unittest.TestCase):
         self.assertEqual(heatmap_data['data'][-1],
                          [0, "1901", -2.4809999999999985])
         self.assertEqual(anomalies_data['data'][-1], None)
+
+        # Assert that first year line matches
+        self.assertEqual(heatmap_data['years'][0], '2023')
+        self.assertEqual(anomalies_data['years'][0], '1901')
+
+        # Assert that last year line matches
+        self.assertEqual(heatmap_data['years'][-1], '1901')
+        self.assertEqual(anomalies_data['years'][-1], '2023')
