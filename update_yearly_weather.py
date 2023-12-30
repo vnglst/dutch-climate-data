@@ -6,7 +6,7 @@ import json
 import datetime
 
 URL = 'https://cdn.knmi.nl/knmi/map/page/klimatologie/gegevens/daggegevens/etmgeg_260.zip'
-OUTPUT_FILE = 'data/rainfall.json'
+OUTPUT_FILE = 'data/weather.json'
 
 
 def download_and_unzip(url):
@@ -52,7 +52,7 @@ def remove_empty_rows(df):
     return df
 
 
-def sum_by_year(df):
+def group_by_year(df):
     df = df.groupby(df['YYYYMMDD'].dt.year).agg(
         {'RH': 'sum', 'SQ': 'sum', 'TG': 'mean'}).reset_index()
     df = df.rename(columns={'YYYYMMDD': 'YYYY'})
@@ -75,7 +75,7 @@ def anomaly_trend(df):
 def process_anomalies(df):
     df = normalize(df)
     df = remove_empty_rows(df)
-    df = sum_by_year(df)
+    df = group_by_year(df)
     df = calc_anomalies(df)
     df = anomaly_trend(df)
 

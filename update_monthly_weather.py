@@ -6,7 +6,7 @@ import json
 import datetime
 
 URL = 'https://cdn.knmi.nl/knmi/map/page/klimatologie/gegevens/daggegevens/etmgeg_260.zip'
-MONTHLY_OUTPUT_FILE = 'data/rainfall-heatmap.json'
+MONTHLY_OUTPUT_FILE = 'data/weather-heatmap.json'
 
 
 def download_and_unzip(url):
@@ -30,14 +30,17 @@ def write_to_file(filename, data):
 
 def normalize(df):
     df['YYYYMMDD'] = pd.to_datetime(df['YYYYMMDD'], format='%Y%m%d')
-    df['RH'] = df['RH'].str.strip()
     df['RH'] = pd.to_numeric(df['RH'], errors='coerce')
+    df['SQ'] = pd.to_numeric(df['SQ'], errors='coerce')
+    df['TG'] = pd.to_numeric(df['TG'], errors='coerce')
 
-    # set any -1 values to 0, in the data -1 is used for <0.05 mm
-    df['RH'] = df['RH'].apply(lambda x: 0 if x == -1 else x)
-    # divide by 10 to get mm
-    df['RH'] = df['RH'] / 10
-    df = df[['YYYYMMDD', 'RH']]
+    # Replace -1 values with 0
+    df[['RH', 'SQ']] = df[['RH', 'SQ']].replace(-1, 0)
+
+    # Divide by 10 to get mm/hours/Celsius
+    df[['RH', 'SQ', 'TG']] = df[['RH', 'SQ', 'TG']].div(10)
+
+    df = df[['YYYYMMDD', 'RH', 'SQ', 'TG']]
     return df
 
 
@@ -49,49 +52,68 @@ def remove_empty_rows(df):
     return df
 
 
-def sum_by_month(df):
-    df = df.groupby(df['YYYYMMDD'].dt.strftime('%Y%m'))[
-        'RH'].sum().reset_index()
+def group_by_month(df):
+    df = df.groupby(df['YYYYMMDD'].dt.strftime('%Y%m')).agg(
+        {'TG': 'mean', 'RH': 'sum', 'SQ': 'sum'}).reset_index()
     df = df.rename(columns={'YYYYMMDD': 'YYYYMM'})
     df['YYYYMM'] = pd.to_datetime(df['YYYYMM'], format='%Y%m')
     return df
 
 
-def calc_anomalies(df):
-    # Convert 'YYYYMM' to datetime
+def calc_anomalies(df, key):
     df['Date'] = pd.to_datetime(df['YYYYMM'], format='%Y%m')
     df['Year'] = df['Date'].dt.year
     df['Month'] = df['Date'].dt.month
 
-    # Calculate monthly averages until 2000
-    monthly_avg_until_2000 = df[df['Year'] <= 2000].groupby(df['Month']).mean()
+    monthly_totals = {}
+    for index, row in df.iterrows():
+        month = row['Month']
+        year = row['Year']
 
-    # Calculate the deviation of each month from the average of the same month until 2000
-    df['anomaly'] = df.groupby(df['Month']).apply(
-        lambda x: x['RH'] - monthly_avg_until_2000.loc[x.name]['RH']).values
+        if year >= 2000:
+            break
+
+        if month not in monthly_totals:
+            monthly_totals[month] = []
+
+        monthly_totals[month].append(row[key])
+
+    monthly_averages = {}
+    for month, values in monthly_totals.items():
+        monthly_averages[month] = sum(values) / len(values)
+
+    df[key + '_anomaly'] = df.apply(lambda row: row[key] -
+                                    monthly_averages[row['Month']], axis=1)
 
     return df
 
 
-def calculcate_monthly_rainfall(df, output_file):
+def process_monthly_anomalies(df, output_file):
     df = normalize(df)
     df = remove_empty_rows(df)
-    df = sum_by_month(df)
-    df = calc_anomalies(df)
+    df = group_by_month(df)
+    df = calc_anomalies(df, 'TG')
+    df = calc_anomalies(df, 'RH')
+    df = calc_anomalies(df, 'SQ')
 
     years = df['YYYYMM'].dt.year.tolist()
     years = [str(year) for year in set(years)]
 
-    heatmap = []
+    rainfall_heatmap = []
+    sunshine_heatmap = []
+    temperature_heatmap = []
 
     for index, row in df.iterrows():
         month_nr = row['YYYYMM'].month - 1
         year_str = str(row['YYYYMM'].year)
-        anomaly = row['anomaly']
-        heatmap.append([year_str, month_nr, anomaly])
+        rainfall_heatmap.append([year_str, month_nr, row['RH_anomaly']])
+        sunshine_heatmap.append([year_str, month_nr, row['SQ_anomaly']])
+        temperature_heatmap.append([year_str, month_nr, row['TG_anomaly']])
 
     return {
-        'heatmap': heatmap,
+        'rainfall_heatmap': rainfall_heatmap,
+        'sunshine_heatmap': sunshine_heatmap,
+        'temperature_heatmap': temperature_heatmap,
         'years': years,
     }
 
@@ -110,7 +132,7 @@ def main(url=URL, output_file=MONTHLY_OUTPUT_FILE):
 
     df.columns = df.columns.str.strip()
 
-    data = calculcate_monthly_rainfall(df, output_file)
+    data = process_monthly_anomalies(df, output_file)
     write_to_file(output_file, data)
 
 
