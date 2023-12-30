@@ -30,14 +30,16 @@ def write_to_file(filename, data):
 
 def normalize(df):
     df['YYYYMMDD'] = pd.to_datetime(df['YYYYMMDD'], format='%Y%m%d')
-    df['RH'] = df['RH'].str.strip()
     df['RH'] = pd.to_numeric(df['RH'], errors='coerce')
+    df['TG'] = pd.to_numeric(df['TG'], errors='coerce')
 
     # set any -1 values to 0, in the data -1 is used for <0.05 mm
     df['RH'] = df['RH'].apply(lambda x: 0 if x == -1 else x)
     # divide by 10 to get mm
     df['RH'] = df['RH'] / 10
-    df = df[['YYYYMMDD', 'RH']]
+    # divide by 10 to get degrees celcius
+    df['TG'] = df['TG'] / 10
+    df = df[['YYYYMMDD', 'RH', 'TG']]
     return df
 
 
@@ -51,7 +53,7 @@ def remove_empty_rows(df):
 
 def sum_by_month(df):
     df = df.groupby(df['YYYYMMDD'].dt.strftime('%Y%m'))[
-        'RH'].sum().reset_index()
+        ['RH', 'TG']].mean().reset_index()
     df = df.rename(columns={'YYYYMMDD': 'YYYYMM'})
     df['YYYYMM'] = pd.to_datetime(df['YYYYMM'], format='%Y%m')
     return df
@@ -65,16 +67,20 @@ def calculcate_monthly_rainfall(df, output_file):
     years = df['YYYYMM'].dt.year.tolist()
     years = [str(year) for year in set(years)]
 
-    heatmap = []
+    rainfall_heatmap = []
+    temperature_heatmap = []
 
     for index, row in df.iterrows():
         month_nr = row['YYYYMM'].month - 1
         year_str = str(row['YYYYMM'].year)
-        rainfall = row['RH']
-        heatmap.append([year_str, month_nr, rainfall])
+        rainfall = row['RH'] if not pd.isna(row['RH']) else None
+        temperatures = row['TG'] if not pd.isna(row['TG']) else None
+        rainfall_heatmap.append([year_str, month_nr, rainfall])
+        temperature_heatmap.append([year_str, month_nr, temperatures])
 
     return {
-        'heatmap': heatmap,
+        'rainfall_heatmap': rainfall_heatmap,
+        'temperature_heatmap': temperature_heatmap,
         'years': years,
     }
 

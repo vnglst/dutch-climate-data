@@ -31,13 +31,17 @@ def write_to_file(filename, data):
 def normalize(df):
     df['YYYYMMDD'] = pd.to_datetime(df['YYYYMMDD'], format='%Y%m%d')
     df['RH'] = df['RH'].str.strip()
+    df['TG'] = df['TG'].str.strip()
     df['RH'] = pd.to_numeric(df['RH'], errors='coerce')
+    df['TG'] = pd.to_numeric(df['TG'], errors='coerce')
 
     # set any -1 values to 0, in the data -1 is used for <0.05 mm
     df['RH'] = df['RH'].apply(lambda x: 0 if x == -1 else x)
     # divide by 10 to get mm
     df['RH'] = df['RH'] / 10
-    df = df[['YYYYMMDD', 'RH']]
+    # divide by 10 to get degrees celcius
+    df['TG'] = df['TG'] / 10
+    df = df[['YYYYMMDD', 'RH', 'TG']]
     return df
 
 
@@ -50,7 +54,7 @@ def remove_empty_rows(df):
 
 
 def sum_by_year(df):
-    df = df.groupby(df['YYYYMMDD'].dt.year)['RH'].sum().reset_index()
+    df = df.groupby(df['YYYYMMDD'].dt.year)[['RH', 'TG']].sum().reset_index()
     df = df.rename(columns={'YYYYMMDD': 'YYYY'})
     return df
 
@@ -71,6 +75,7 @@ def calculate_yearly_rainfall(df):
 
     return {
         'rainfall': df['RH'].tolist(),
+        'temperatures': df['TG'].tolist(),
         'trend': df['trend'].tolist(),
         'years': years,
     }
