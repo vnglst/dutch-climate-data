@@ -30,14 +30,17 @@ def write_to_file(filename, data):
 
 def normalize(df):
     df['YYYYMMDD'] = pd.to_datetime(df['YYYYMMDD'], format='%Y%m%d')
-    df['RH'] = df['RH'].str.strip()
     df['RH'] = pd.to_numeric(df['RH'], errors='coerce')
+    df['SQ'] = pd.to_numeric(df['SQ'], errors='coerce')
+    df['TG'] = pd.to_numeric(df['TG'], errors='coerce')
 
-    # set any -1 values to 0, in the data -1 is used for <0.05 mm
-    df['RH'] = df['RH'].apply(lambda x: 0 if x == -1 else x)
-    # divide by 10 to get mm
-    df['RH'] = df['RH'] / 10
-    df = df[['YYYYMMDD', 'RH']]
+    # Replace -1 values with 0
+    df[['RH', 'SQ']] = df[['RH', 'SQ']].replace(-1, 0)
+
+    # Divide by 10 to get mm/hours/Celsius
+    df[['RH', 'SQ', 'TG']] = df[['RH', 'SQ', 'TG']].div(10)
+
+    df = df[['YYYYMMDD', 'RH', 'SQ', 'TG']]
     return df
 
 
@@ -50,23 +53,26 @@ def remove_empty_rows(df):
 
 
 def sum_by_year(df):
-    df = df.groupby(df['YYYYMMDD'].dt.year)['RH'].sum().reset_index()
+    df = df.groupby(df['YYYYMMDD'].dt.year).agg(
+        {'RH': 'sum', 'SQ': 'sum', 'TG': 'mean'}).reset_index()
     df = df.rename(columns={'YYYYMMDD': 'YYYY'})
     return df
 
 
 def calc_anomalies(df):
-    mean_until_2000 = df[df['YYYY'] <= 2000]['RH'].mean()
-    df['anomaly'] = df['RH'] - mean_until_2000
+    for column in ['RH', 'SQ', 'TG']:
+        mean_until_2000 = df[df['YYYY'] <= 2000][column].mean()
+        df[f'{column.lower()}_anomaly'] = df[column] - mean_until_2000
     return df
 
 
 def anomaly_trend(df):
-    df['anomaly_trend'] = df['anomaly'].rolling(10, min_periods=1).mean()
+    for column in ['rh_anomaly', 'sq_anomaly', 'tg_anomaly']:
+        df[f'{column}_trend'] = df[column].rolling(10, min_periods=1).mean()
     return df
 
 
-def calculate_yearly_rainfall(df):
+def process_anomalies(df):
     df = normalize(df)
     df = remove_empty_rows(df)
     df = sum_by_year(df)
@@ -77,9 +83,15 @@ def calculate_yearly_rainfall(df):
     years = [str(year) for year in years]
 
     return {
-        'mean': df['RH'].mean(),
-        'anomalies': df['anomaly'].tolist(),
-        'trend': df['anomaly_trend'].tolist(),
+        'mean_rainfall': df['RH'].mean(),
+        'rainfall_anomalies': df['rh_anomaly'].tolist(),
+        'rainfall_trend': df['rh_anomaly_trend'].tolist(),
+        'mean_sunshine': df['SQ'].mean(),
+        'sunshine_anomalies': df['sq_anomaly'].tolist(),
+        'sunshine_trend': df['sq_anomaly_trend'].tolist(),
+        'mean_temperature': df['TG'].mean(),
+        'temperature_anomalies': df['tg_anomaly'].tolist(),
+        'temperature_trend': df['tg_anomaly_trend'].tolist(),
         'years': years,
     }
 
@@ -98,7 +110,7 @@ def main(url=URL, output_file=OUTPUT_FILE):
 
     df.columns = df.columns.str.strip()
 
-    data = calculate_yearly_rainfall(df)
+    data = process_anomalies(df)
     write_to_file(output_file, data)
 
 
