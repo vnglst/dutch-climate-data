@@ -3,10 +3,10 @@ from unittest.mock import patch, Mock
 import io
 import zipfile
 import os
-import update_rainfall
+import update_yearly_weather
 import json
 
-OUTPUT_FILE = 'tmp/rainfall.json'
+OUTPUT_FILE = 'tmp/weather.json'
 
 
 class TestUpdateRainfall(unittest.TestCase):
@@ -22,7 +22,7 @@ class TestUpdateRainfall(unittest.TestCase):
         mock_response.content = self.mock_zip_content
         mock_get.return_value = mock_response
 
-        update_rainfall.main('localhost:3000/mock', OUTPUT_FILE)
+        update_yearly_weather.main('localhost:3000/mock', OUTPUT_FILE)
 
         self.assertTrue(os.path.exists(OUTPUT_FILE))
 
@@ -30,9 +30,11 @@ class TestUpdateRainfall(unittest.TestCase):
             data = json.load(file)
 
         # 1906
-        self.assertEqual(data['rainfall'][0], 726.3)
+        self.assertEqual(data['temperature_anomalies']
+                         [0], -0.18190688713699643)
         # 2022
-        self.assertEqual(data['rainfall'][-2], 820.9)
+        self.assertEqual(data['temperature_anomalies'][-2], 2.2493259895753326)
+        self.assertEqual(data['mean_temperature'], 9.616110766723978)
 
         self.assertEqual(data['years'][0], '1906')
         self.assertEqual(data['years'][-1], '2023')

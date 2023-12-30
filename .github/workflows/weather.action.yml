@@ -1,4 +1,4 @@
-name: Update Rainfall
+name: Update Weather Data
 
 on:
   workflow_dispatch:
@@ -20,12 +20,14 @@ jobs:
       - name: Install Dependencies
         run: |
           poetry install
-      - name: Run Update Rainfall
-        run: poetry run python update_rainfall.py
+      - name: Run Update Monthly Weather Data
+        run: poetry run python update_monthly_weather.py
+      - name: Run Update Yearly Weather Data
+        run: poetry run python update_yearly_weather.py
       - name: Commit and Push
         run: |
           git config --local user.email "robot@koenvangilst.nl"
           git config --local user.name "Robot"
           git add .
-          git commit -m "Update rainfall"
+          git commit -m "Update weather data"
           git push
