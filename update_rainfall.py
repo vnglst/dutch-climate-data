@@ -55,8 +55,14 @@ def sum_by_year(df):
     return df
 
 
-def calc_trend(df):
-    df['trend'] = df['RH'].rolling(10, min_periods=1).mean()
+def calc_anomalies(df):
+    mean_until_2000 = df[df['YYYY'] <= 2000]['RH'].mean()
+    df['anomaly'] = df['RH'] - mean_until_2000
+    return df
+
+
+def anomaly_trend(df):
+    df['anomaly_trend'] = df['anomaly'].rolling(10, min_periods=1).mean()
     return df
 
 
@@ -64,14 +70,16 @@ def calculate_yearly_rainfall(df):
     df = normalize(df)
     df = remove_empty_rows(df)
     df = sum_by_year(df)
-    df = calc_trend(df)
+    df = calc_anomalies(df)
+    df = anomaly_trend(df)
 
     years = df['YYYY'].tolist()
     years = [str(year) for year in years]
 
     return {
-        'rainfall': df['RH'].tolist(),
-        'trend': df['trend'].tolist(),
+        'mean': df['RH'].mean(),
+        'anomalies': df['anomaly'].tolist(),
+        'trend': df['anomaly_trend'].tolist(),
         'years': years,
     }
 

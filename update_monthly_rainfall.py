@@ -57,10 +57,27 @@ def sum_by_month(df):
     return df
 
 
+def calc_anomalies(df):
+    # Convert 'YYYYMM' to datetime
+    df['Date'] = pd.to_datetime(df['YYYYMM'], format='%Y%m')
+    df['Year'] = df['Date'].dt.year
+    df['Month'] = df['Date'].dt.month
+
+    # Calculate monthly averages until 2000
+    monthly_avg_until_2000 = df[df['Year'] <= 2000].groupby(df['Month']).mean()
+
+    # Calculate the deviation of each month from the average of the same month until 2000
+    df['anomaly'] = df.groupby(df['Month']).apply(
+        lambda x: x['RH'] - monthly_avg_until_2000.loc[x.name]['RH']).values
+
+    return df
+
+
 def calculcate_monthly_rainfall(df, output_file):
     df = normalize(df)
     df = remove_empty_rows(df)
     df = sum_by_month(df)
+    df = calc_anomalies(df)
 
     years = df['YYYYMM'].dt.year.tolist()
     years = [str(year) for year in set(years)]
@@ -70,8 +87,8 @@ def calculcate_monthly_rainfall(df, output_file):
     for index, row in df.iterrows():
         month_nr = row['YYYYMM'].month - 1
         year_str = str(row['YYYYMM'].year)
-        rainfall = row['RH']
-        heatmap.append([year_str, month_nr, rainfall])
+        anomaly = row['anomaly']
+        heatmap.append([year_str, month_nr, anomaly])
 
     return {
         'heatmap': heatmap,
