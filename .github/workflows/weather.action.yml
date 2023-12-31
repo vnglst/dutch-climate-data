@@ -3,7 +3,7 @@ name: Update Weather Data
 on:
   workflow_dispatch:
   schedule:
-    - cron: "0 13 * * 5" # Runs at 12:00 PM every Friday
+    - cron: "0 12 * * *"
 
 jobs:
   build:
