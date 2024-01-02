@@ -1,0 +1,32 @@
+name: Update Monthly Weather Data
+
+on:
+  workflow_dispatch:
+  schedule:
+    # Every 1st of the month at 00:00 UTC
+    - cron: "0 0 1 * *"
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: "3.x"
+      - name: Install Poetry
+        run: |
+          pipx install poetry==1.2.0
+      - name: Install Dependencies
+        run: |
+          poetry install
+      - name: Run Update Monthly Weather Data
+        run: poetry run python update_monthly_weather.py
+      - name: Commit and Push
+        run: |
+          git config --local user.email "robot@koenvangilst.nl"
+          git config --local user.name "Robot"
+          git add .
+          git commit -m "Update monthly weather data"
+          git push

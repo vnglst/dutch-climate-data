@@ -1,9 +1,10 @@
-name: Update Weather Data
+name: Update Yearly Weather Data
 
 on:
   workflow_dispatch:
   schedule:
-    - cron: "0 12 * * *"
+    # run yearly at 1st of January
+    - cron: "0 0 1 1 *"
 
 jobs:
   build:
@@ -20,8 +21,6 @@ jobs:
       - name: Install Dependencies
         run: |
           poetry install
-      - name: Run Update Monthly Weather Data
-        run: poetry run python update_monthly_weather.py
       - name: Run Update Yearly Weather Data
         run: poetry run python update_yearly_weather.py
       - name: Commit and Push
@@ -29,5 +28,5 @@ jobs:
           git config --local user.email "robot@koenvangilst.nl"
           git config --local user.name "Robot"
           git add .
-          git commit -m "Update weather data"
+          git commit -m "Update yearly weather data"
           git push
