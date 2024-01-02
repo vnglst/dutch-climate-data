@@ -6,7 +6,7 @@ import json
 import datetime
 
 URL = 'https://cdn.knmi.nl/knmi/map/page/klimatologie/gegevens/daggegevens/etmgeg_260.zip'
-MONTHLY_OUTPUT_FILE = 'data/weather-heatmap.json'
+MONTHLY_OUTPUT_FILE = 'data/monthly-weather-data.json'
 
 
 def download_and_unzip(url):
