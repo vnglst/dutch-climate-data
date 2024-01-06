@@ -98,8 +98,8 @@ def process_anomalies(df):
         # Source: https://www.knmi.nl/klimaatdashboard
         'max_temperature_anomaly': df['tg_anomaly'].max(),
         'min_temperature_anomaly': df['tg_anomaly'].min(),
-        'temperature_worst_case': 14.9,
-        'temperature_best_case': 11.4,
+        'temperature_worst_case': 14.9 - df['tg_mean'].iloc[-1],
+        'temperature_best_case': 11.4 - df['tg_mean'].iloc[-1],
         'last_temperature_anomaly': df['tg_anomaly'].iloc[-1],
         'years': years,
         'forecast_years': years + [str(year) for year in range(last_year+1, 2101)]
