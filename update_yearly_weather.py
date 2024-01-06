@@ -96,6 +96,8 @@ def process_anomalies(df):
         'temperature_anomalies': df['tg_anomaly'].tolist(),
         'temperature_trend': df['tg_anomaly_trend'].tolist(),
         # Source: https://www.knmi.nl/klimaatdashboard
+        'max_temperature_anomaly': df['tg_anomaly'].max(),
+        'min_temperature_anomaly': df['tg_anomaly'].min(),
         'temperature_worst_case': 14.9,
         'temperature_best_case': 11.4,
         'last_temperature_anomaly': df['tg_anomaly'].iloc[-1],
