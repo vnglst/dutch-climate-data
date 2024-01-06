@@ -33,8 +33,8 @@ class TestUpdateRainfall(unittest.TestCase):
         self.assertEqual(data['temperature_anomalies']
                          [0], -0.18190688713699643)
         # 2022
-        self.assertEqual(data['temperature_anomalies'][-2], 2.2493259895753326)
-        self.assertEqual(data['mean_temperature'], 9.616110766723978)
+        self.assertEqual(data['temperature_anomalies'][-1], 2.4676821539588936)
+        self.assertEqual(data['mean_temperature'], 9.323276750150695)
 
         self.assertEqual(data['years'][0], '1906')
         self.assertEqual(data['years'][-1], '2023')
