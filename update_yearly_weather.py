@@ -92,6 +92,7 @@ def process_anomalies(df):
         'mean_sunshine': df['sq_mean'].iloc[-1],
         'sunshine_anomalies': df['sq_anomaly'].tolist(),
         'sunshine_trend': df['sq_anomaly_trend'].tolist(),
+        # Temperatures
         'mean_temperature': df['tg_mean'].iloc[-1],
         'temperature_anomalies': df['tg_anomaly'].tolist(),
         'temperature_trend': df['tg_anomaly_trend'].tolist(),
@@ -102,6 +103,7 @@ def process_anomalies(df):
         'temperature_best_case': 11.4 - df['tg_mean'].iloc[-1],
         'last_temperature_anomaly': df['tg_anomaly'].iloc[-1],
         'last_temperature_trend': df['tg_anomaly_trend'].iloc[-1],
+        # Years - x-axis
         'years': years,
         'forecast_years': years + [str(year) for year in range(last_year+1, 2101)]
     }
