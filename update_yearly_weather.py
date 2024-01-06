@@ -48,7 +48,8 @@ def remove_empty_rows(df):
     mask = (df['YYYYMMDD'].dt.month == 1) & (
         df['YYYYMMDD'].dt.day == 1) & (df['RH'].notna())
     first_valid_index = mask.idxmax()
-    df = df.loc[first_valid_index:]
+    last_valid_index = mask[::-1].idxmax() - 1
+    df = df.loc[first_valid_index:last_valid_index]
     return df
 
 
@@ -62,6 +63,7 @@ def group_by_year(df):
 def calc_anomalies(df):
     for column in ['RH', 'SQ', 'TG']:
         mean_until_2000 = df[df['YYYY'] <= 2000][column].mean()
+        df[f'{column.lower()}_mean'] = mean_until_2000
         df[f'{column.lower()}_anomaly'] = df[column] - mean_until_2000
     return df
 
@@ -81,18 +83,24 @@ def process_anomalies(df):
 
     years = df['YYYY'].tolist()
     years = [str(year) for year in years]
+    last_year = int(years[-1])
 
     return {
-        'mean_rainfall': df['RH'].mean(),
+        'mean_rainfall': df['rh_mean'].iloc[-1],
         'rainfall_anomalies': df['rh_anomaly'].tolist(),
         'rainfall_trend': df['rh_anomaly_trend'].tolist(),
-        'mean_sunshine': df['SQ'].mean(),
+        'mean_sunshine': df['sq_mean'].iloc[-1],
         'sunshine_anomalies': df['sq_anomaly'].tolist(),
         'sunshine_trend': df['sq_anomaly_trend'].tolist(),
-        'mean_temperature': df['TG'].mean(),
+        'mean_temperature': df['tg_mean'].iloc[-1],
         'temperature_anomalies': df['tg_anomaly'].tolist(),
         'temperature_trend': df['tg_anomaly_trend'].tolist(),
+        # Source: https://www.knmi.nl/klimaatdashboard
+        'temperature_worst_case': 14.9,
+        'temperature_best_case': 11.4,
+        'last_temperature_anomaly': df['tg_anomaly'].iloc[-1],
         'years': years,
+        'forecast_years': years + [str(year) for year in range(last_year+1, 2101)]
     }
 
 
