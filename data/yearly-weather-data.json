@@ -1,5 +1,5 @@
 {
-  "timestamp": "2024-01-06T19:53:08.541186",
+  "timestamp": "2024-01-06T19:56:48.826986",
   "mean_rainfall": 786.7842105263157,
   "rainfall_anomalies": [
     -60.48421052631579,
@@ -728,6 +728,7 @@
   "temperature_worst_case": 5.576723249849305,
   "temperature_best_case": 2.076723249849305,
   "last_temperature_anomaly": 2.4676821539588936,
+  "last_temperature_trend": 1.917574885450772,
   "years": [
     "1906",
     "1907",
